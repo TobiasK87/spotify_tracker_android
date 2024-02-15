@@ -31,11 +31,9 @@ import java.util.concurrent.TimeUnit;
 
 public class ScrollingActivity extends AppCompatActivity {
 
-    private ActivityScrollingBinding binding;
+    private static final String CLIENT_ID = BuildConfig.CLIENT_ID; // see here on api key variables https://guides.codepath.com/android/Storing-Secret-Keys-in-Android#secrets-in-resource-files
 
-    private static final String CLIENT_ID = "";// insert CLIENT_ID from Spotify
-
-    /* um SHA1 Key zu kriegen, gib in PowerShell ein:
+    /* in order to get SHA1 Key, run this in PowerShell:
     keytool -list -v -keystore "C:\Users\Tobi\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android */
     // private static final String REDIRECT_URI = "http://com.yourdomain.yourapp/callback";
     private static final String REDIRECT_URI = "http://localhost:8080";
@@ -44,14 +42,14 @@ public class ScrollingActivity extends AppCompatActivity {
     private PlayerApi mPlayerApi;
     private TextView mTextViewSongs;
     private String mTimestamp = null;
-    private Map<String, String> mSongDictionary = new HashMap<String, String>();
+    private Map<String, String> mSongDictionary = new HashMap<>();
     private static ArrayList<String> mSongs = new ArrayList<String>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        binding = ActivityScrollingBinding.inflate(getLayoutInflater());
+        com.example.spotifytracker.databinding.ActivityScrollingBinding binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         Toolbar toolbar = binding.toolbar;
@@ -64,9 +62,9 @@ public class ScrollingActivity extends AppCompatActivity {
         mTextViewSongs = (TextView) findViewById(R.id.songs) ;
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("mainActivity", "Song: " + mSongs.get(0));
 
                 if (mSongs.size() > 0) {
+                    Log.d("mainActivity", "Song: " + mSongs.get(0));
                     String track_str = mSongs.get(mSongs.size() - 1);
                     Snackbar.make(v, "Currently playing: " + track_str, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
@@ -79,9 +77,7 @@ public class ScrollingActivity extends AppCompatActivity {
 
                     }
                     mTextViewSongs.setText(track_str);
-                    /*Snackbar.make(v, "Songs played (reversed order): " + track_str, Snackbar.LENGTH_SHORT)
-                            .setAction("Action", null).show();*/
-
+                    // Snackbar.make(v, "Songs played (reversed order): " + track_str, Snackbar.LENGTH_SHORT).setAction("Action", null).show();
                 }
             }
         });
@@ -209,6 +205,7 @@ public class ScrollingActivity extends AppCompatActivity {
 
         mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(playerState -> {
             String uri = playerState.track.uri;
+            /* This is a super dirty implementation to jump to the next song which does not work well at all
             if(uri != "6dJ2mSRaKE9ctYw9qWNGWQ"){
                 try {
                     TimeUnit.SECONDS.sleep((long) 1);
@@ -218,7 +215,7 @@ public class ScrollingActivity extends AppCompatActivity {
                 mSpotifyAppRemote.getPlayerApi().skipNext();
                 Log.d(a, "Skipping track: " + playerState.track.name + " with uri " + uri);
             }
-
+            */
         });
         // would work mSpotifyAppRemote.getPlayerApi().skipToIndex("spotify:playlist:3FoxypbhZB8j5XivI8wQqU", 2);
 

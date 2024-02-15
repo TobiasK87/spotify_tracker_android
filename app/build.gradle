@@ -2,6 +2,12 @@ plugins {
     id 'com.android.application'
 }
 
+
+
+def apikeyPropertiesFile = rootProject.file("apikey.properties")
+def apikeyProperties = new Properties()
+apikeyProperties.load(new FileInputStream(apikeyPropertiesFile))
+
 android {
     namespace 'com.example.spotifytracker'
     compileSdk 32
@@ -12,6 +18,9 @@ android {
         targetSdk 32
         versionCode 1
         versionName "1.0"
+
+        // should correspond to key/value pairs inside the file
+        buildConfigField("String", "CLIENT_ID", apikeyProperties['CLIENT_ID'])
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
