@@ -36,31 +36,7 @@
 
     <include layout="@layout/content_scrolling" />
 
-    <TableLayout
-        android:id="@+id/TableLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:gravity="center_horizontal"
-        android:stretchColumns="*">
-        <TableRow android:layout_width="match_parent">
 
-            <TextView android:text="Song"
-                android:layout_width="0dp"
-                android:textAlignment="center"
-                android:textSize="@dimen/text_margin" />
-            <TextView android:text="Last Played"
-                android:layout_width="0dp"
-                android:textAlignment="center"
-                android:textSize="@dimen/text_margin"/>
-            <Button android:text="Play"
-                android:layout_width="0dp"
-                android:textAlignment="center"
-                android:textSize="@dimen/text_margin"/>
-        </TableRow>
-
-    </TableLayout>
 
     <Button
         android:id="@+id/button"
