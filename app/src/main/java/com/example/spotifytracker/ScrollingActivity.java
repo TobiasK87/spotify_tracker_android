@@ -6,6 +6,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -57,7 +59,76 @@ public class ScrollingActivity extends AppCompatActivity {
         CollapsingToolbarLayout toolBarLayout = binding.toolbarLayout;
         toolBarLayout.setTitle(getTitle());
 
+        /* Find Tablelayout defined in activity_scrolling.xml */
+        TableLayout tl = (TableLayout) findViewById(R.id.TableLayout);
+        /* Create a new row to be added. */
+        TableRow tr = new TableRow(this);
+        tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        /* Create a Button to be the row-content. */
 
+        /*
+        Button b = new Button(this);
+        b.setTextSize(16);
+        b.setText("Dynamic Button");
+        b.setTextColor(getResources().getColor(R.color.white));
+        b.setBackgroundColor(getResources().getColor(R.color.purple_700));
+        b.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        //b.setWidth(0);
+        b.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        */
+
+        TextView t = new TextView(this);
+        t.setTextSize(16);
+        t.setText("Song");
+        //t.setTextColor(getResources().getColor(R.color.black));
+        t.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        t.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+
+
+        /*
+        Button b2 = new Button(this);
+        b2.setTextSize(16);
+        b2.setText("Dynamic Button 2");
+        b2.setTextColor(getResources().getColor(R.color.white));
+        b2.setBackgroundColor(getResources().getColor(R.color.purple_700));
+        b2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        //b2.setWidth(0);
+        b2.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        //b2.setTextSize(R.dimen.text_margin);
+         */
+
+        TextView t2 = new TextView(this);
+        t2.setTextSize(16);
+        t2.setText("Last played");
+        //t.setTextColor(getResources().getColor(R.color.black));
+        t2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        t2.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+
+        Button b3 = new Button(this);
+        b3.setTextSize(16);
+        b3.setText("Dynamic Button 3");
+        b3.setTextColor(getResources().getColor(R.color.white));
+        b3.setBackgroundColor(getResources().getColor(R.color.purple_700));
+        b3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        //b3.setWidth(0);
+        b3.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        //b3.setTextSize(R.dimen.text_margin);
+
+        /* Add Button to row. */
+        tr.addView(t);
+        tr.addView(t2);
+        tr.addView(b3);
+        /* Add row to TableLayout. */
+//tr.setBackgroundResource(R.drawable.sf_gradient_03);
+        //tl.addView(tr, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+
+        /*for(int i2=1; i2<=20; i2++) {
+            addRow("s" + Integer.toString((i2)), "lp", "uriuriuri");
+        }
+         */
+
+
+        /* this was the button which should create the snackbar
         Button button = (Button) findViewById(R.id.button);
         mTextViewSongs = (TextView) findViewById(R.id.songs) ;
         button.setOnClickListener(new View.OnClickListener() {
@@ -81,6 +152,7 @@ public class ScrollingActivity extends AppCompatActivity {
                 }
             }
         });
+        */
 
 
         FloatingActionButton fab = binding.fab;
@@ -219,8 +291,6 @@ public class ScrollingActivity extends AppCompatActivity {
         });
         // would work mSpotifyAppRemote.getPlayerApi().skipToIndex("spotify:playlist:3FoxypbhZB8j5XivI8wQqU", 2);
 
-         // "4cWo2CSUobCtVbFL2RSP42"
-
     }
 
     @Override
@@ -236,17 +306,25 @@ public class ScrollingActivity extends AppCompatActivity {
                         String uri = track.uri;
                         Log.d("MainActivity", "in onStop:" + track.name + " by " + track.artist.name + " with uri " + uri);
                         String track_str = track.artist.name + " - " + track.name;
+
+                        if(mSongDictionary.get(uri) == null) {
+                            addRow(track_str, "last played", uri);
+                        }
+
                         // Log.d(a, Boolean.toString(uri==null));
                         // Log.d(a, "Map is empty: "  + Boolean.toString(mSongDictionary.values().isEmpty()));
+
+
                         if(mSongDictionary.get(uri) == null);{
                             if (mTimestamp == null) {
                                 mTimestamp = String.valueOf(System.currentTimeMillis());
                             } else {
                                 mTimestamp = String.valueOf(System.currentTimeMillis() - Long.parseLong(mTimestamp));
                             }
-                            track_str = track_str + "stopped after: "+ mTimestamp;
+                            // track_str = track_str + "stopped after: "+ mTimestamp;
                             mSongDictionary.put(uri, track_str);
                         }
+                        /*
                         String all_tracks = "";
                         //Log.d("mainactivity", mSongDictionary.values().toString());
                         for(String tracks: mSongDictionary.values()){
@@ -256,6 +334,7 @@ public class ScrollingActivity extends AppCompatActivity {
                         // String track_str = mTextViewSongs.getText() + "\n" +  track.name + " by " + track.artist.name;
                         //mTextViewSongs.setText(track_str);
                         mTextViewSongs.setText(all_tracks);
+                        */
                     }
                 });
 
@@ -268,6 +347,58 @@ public class ScrollingActivity extends AppCompatActivity {
 
                     Log.d(a, "playlistinfo: " + playlistTitle + " " + playlistSubTitle + " " + playlistUri);
                 });
+
+    }
+
+    private void addRow(String song, String last_played, String uri){
+
+        /* Find Tablelayout defined in activity_scrolling.xml */
+        TableLayout tl = (TableLayout) findViewById(R.id.TableLayout);
+        /* Create a new row to be added. */
+        TableRow tr = new TableRow(this);
+        tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        /* Create a Button to be the row-content. */
+
+        TextView t = new TextView(this);
+        t.setTextSize(16);
+        t.setText(song);
+        //t.setTextColor(getResources().getColor(R.color.black));
+        t.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        t.setWidth(0);
+        t.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+
+        TextView t2 = new TextView(this);
+        t2.setTextSize(16);
+        t2.setText(last_played);
+        //t.setTextColor(getResources().getColor(R.color.black));
+        t2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        t2.setWidth(0);
+        t2.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+
+        Button b3 = new Button(this);
+        b3.setTextSize(16);
+        b3.setText("play");
+        b3.setTextColor(getResources().getColor(R.color.white));
+        b3.setBackgroundColor(getResources().getColor(R.color.purple_700));
+        b3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        //b3.setWidth(0);
+        b3.setWidth(0);
+        b3.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        b3.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                mSpotifyAppRemote.getPlayerApi().play(uri);
+            }
+
+        });
+        //b3.setTextSize(R.dimen.text_margin);
+
+        /* Add Button to row. */
+        tr.addView(t);
+        tr.addView(t2);
+        tr.addView(b3);
+        /* Add row to TableLayout. */
+        //tr.setBackgroundResource(R.drawable.sf_gradient_03);
+        tl.addView(tr, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
 
     }
 }
