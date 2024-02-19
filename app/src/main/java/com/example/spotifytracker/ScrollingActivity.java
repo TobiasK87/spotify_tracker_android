@@ -66,36 +66,12 @@ public class ScrollingActivity extends AppCompatActivity {
         tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
         /* Create a Button to be the row-content. */
 
-        /*
-        Button b = new Button(this);
-        b.setTextSize(16);
-        b.setText("Dynamic Button");
-        b.setTextColor(getResources().getColor(R.color.white));
-        b.setBackgroundColor(getResources().getColor(R.color.purple_700));
-        b.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        //b.setWidth(0);
-        b.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-        */
-
         TextView t = new TextView(this);
         t.setTextSize(16);
         t.setText("Song");
         //t.setTextColor(getResources().getColor(R.color.black));
         t.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
         t.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-
-
-        /*
-        Button b2 = new Button(this);
-        b2.setTextSize(16);
-        b2.setText("Dynamic Button 2");
-        b2.setTextColor(getResources().getColor(R.color.white));
-        b2.setBackgroundColor(getResources().getColor(R.color.purple_700));
-        b2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        //b2.setWidth(0);
-        b2.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-        //b2.setTextSize(R.dimen.text_margin);
-         */
 
         TextView t2 = new TextView(this);
         t2.setTextSize(16);
@@ -118,14 +94,7 @@ public class ScrollingActivity extends AppCompatActivity {
         tr.addView(t);
         tr.addView(t2);
         tr.addView(b3);
-        /* Add row to TableLayout. */
-//tr.setBackgroundResource(R.drawable.sf_gradient_03);
-        //tl.addView(tr, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
 
-        /*for(int i2=1; i2<=20; i2++) {
-            addRow("s" + Integer.toString((i2)), "lp", "uriuriuri");
-        }
-         */
 
 
         /* this was the button which should create the snackbar
@@ -291,11 +260,6 @@ public class ScrollingActivity extends AppCompatActivity {
         });
         // would work mSpotifyAppRemote.getPlayerApi().skipToIndex("spotify:playlist:3FoxypbhZB8j5XivI8wQqU", 2);
 
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
         // Subscribe to PlayerState
         mSpotifyAppRemote.getPlayerApi()
                 .subscribeToPlayerState() // maybe use getPlayerState instead? https://spotify.github.io/android-sdk/app-remote-lib/docs/com/spotify/android/appremote/api/PlayerApi.html#getPlayerState--
@@ -350,6 +314,12 @@ public class ScrollingActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+    }
+
     private void addRow(String song, String last_played, String uri){
 
         /* Find Tablelayout defined in activity_scrolling.xml */
@@ -359,32 +329,31 @@ public class ScrollingActivity extends AppCompatActivity {
         tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
         /* Create a Button to be the row-content. */
 
-        TextView t = new TextView(this);
-        t.setTextSize(16);
-        t.setText(song);
+        TextView songTextView = new TextView(this);
+        songTextView.setTextSize(16);
+        songTextView.setText(song);
         //t.setTextColor(getResources().getColor(R.color.black));
-        t.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        t.setWidth(0);
-        t.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        songTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        songTextView.setWidth(0);
+        songTextView.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
 
-        TextView t2 = new TextView(this);
-        t2.setTextSize(16);
-        t2.setText(last_played);
+        TextView lastPlayedTextView = new TextView(this);
+        lastPlayedTextView.setTextSize(16);
+        lastPlayedTextView.setText(last_played);
         //t.setTextColor(getResources().getColor(R.color.black));
-        t2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        t2.setWidth(0);
-        t2.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        lastPlayedTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        lastPlayedTextView.setWidth(0);
+        lastPlayedTextView.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
 
-        Button b3 = new Button(this);
-        b3.setTextSize(16);
-        b3.setText("play");
-        b3.setTextColor(getResources().getColor(R.color.white));
-        b3.setBackgroundColor(getResources().getColor(R.color.purple_700));
-        b3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        //b3.setWidth(0);
-        b3.setWidth(0);
-        b3.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-        b3.setOnClickListener(new View.OnClickListener() {
+        Button playButton = new Button(this);
+        playButton.setTextSize(16);
+        playButton.setText("play");
+        playButton.setTextColor(getResources().getColor(R.color.white));
+        playButton.setBackgroundColor(getResources().getColor(R.color.purple_700));
+        playButton.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+        playButton.setWidth(0);
+        playButton.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
+        playButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mSpotifyAppRemote.getPlayerApi().play(uri);
             }
@@ -393,9 +362,9 @@ public class ScrollingActivity extends AppCompatActivity {
         //b3.setTextSize(R.dimen.text_margin);
 
         /* Add Button to row. */
-        tr.addView(t);
-        tr.addView(t2);
-        tr.addView(b3);
+        tr.addView(songTextView);
+        tr.addView(lastPlayedTextView);
+        tr.addView(playButton);
         /* Add row to TableLayout. */
         //tr.setBackgroundResource(R.drawable.sf_gradient_03);
         tl.addView(tr, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
