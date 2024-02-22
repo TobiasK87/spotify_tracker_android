@@ -6,6 +6,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.Log;
 import android.view.View;
 import com.example.spotifytracker.databinding.ActivitySpotifyLoginBinding;
 
@@ -20,8 +21,8 @@ import android.webkit.WebViewClient;
 
 public class SpotifyLoginActivity extends Activity {
 
-    private static final String CLIENT_ID = "your_client_id";
-    private static final String REDIRECT_URI = "your_redirect_uri";
+    private static final String CLIENT_ID = BuildConfig.CLIENT_ID; // see here on api key variables https://guides.codepath.com/android/Storing-Secret-Keys-in-Android#secrets-in-resource-files
+    private static final String REDIRECT_URI = "http://localhost:8080";
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
     private static final String RESPONSE_TYPE = "code";
     private static final String SCOPE = "user-read-private user-read-email"; // Add required scopes
@@ -57,6 +58,9 @@ public class SpotifyLoginActivity extends Activity {
     private void startAuthorization() {
         String url = AUTH_URL + "?client_id=" + CLIENT_ID + "&response_type=" + RESPONSE_TYPE +
                 "&redirect_uri=" + REDIRECT_URI + "&scope=" + SCOPE;
+        Log.d("SpotifyLoginActivitylog", url);
+        webView.getSettings().setUserAgentString("Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.9999.99 Mobile Safari/537.36");
+        webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl(url);
     }
 
