@@ -21,18 +21,31 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class SpotifyLoginActivity extends Activity {
 
     private static final String CLIENT_ID = BuildConfig.CLIENT_ID; // see here on api key variables https://guides.codepath.com/android/Storing-Secret-Keys-in-Android#secrets-in-resource-files
     private static final String REDIRECT_URI = "http://localhost:8080";
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
+    private static final String AUTHORIZATION_URL = "https://accounts.spotify.com/authorize";
+    private static final String BASE_URL = "https://api.spotify.com/";
     private static final String RESPONSE_TYPE = "code";
     private static final String SCOPE = "user-read-private user-read-email"; // Add required scopes
     private static final String activity = "SpotifyLoginActivity";
+    private static final String SCOPES = "user-read-private user-read-email"; // Add your required scopes
+    private SpotifyApiService service;
+    private String codeVerifier; // Declare codeVerifier as a field
 
     private WebView webView;
 
@@ -40,25 +53,69 @@ public class SpotifyLoginActivity extends Activity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spotify_login);
+
+        // Generate codeVerifier
+        codeVerifier = PKCEUtil.generateCodeVerifier();
+
+        // Initialize Retrofit service
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        service = retrofit.create(SpotifyApiService.class);
+        webView = findViewById(R.id.webView);
         setupWebView();
+
+        String codeVerifier = PKCEUtil.generateCodeVerifier();
+        startAuthorization(codeVerifier);
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
-        webView = findViewById(R.id.webView);
-        webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.startsWith(REDIRECT_URI)) {
-                    handleCallback(url);
-                    view.stopLoading();
+                    Uri uri = Uri.parse(url);
+                    String code = uri.getQueryParameter("code");
+                    String state = uri.getQueryParameter("state");
+
+                    // Check state if necessary
+
+                    if (code != null) {
+                        exchangeCodeForToken(code, codeVerifier);
+                    }
+                    Log.d("SpotifyLoginActivity", "Callback URL: " + url);
+                    return true;
                 }
+                return false;
             }
         });
-        String authorizationUrl = buildAuthorizationUrl();
-        webView.loadUrl(authorizationUrl);
+
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+    }
+
+    private void startAuthorization(String codeVerifier) {
+        Map<String, String> params = new HashMap<>();
+        params.put("client_id", CLIENT_ID);
+        params.put("response_type", RESPONSE_TYPE);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("code_challenge_method", "S256");
+        params.put("code_challenge", PKCEUtil.generateCodeChallenge(codeVerifier));
+        params.put("scope", SCOPES);
+
+        StringBuilder sb = new StringBuilder(AUTHORIZATION_URL);
+        sb.append("?");
+
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            sb.append(entry.getKey());
+            sb.append("=");
+            sb.append(Uri.encode(entry.getValue()));
+            sb.append("&");
+        }
+
+        webView.loadUrl(sb.toString());
     }
 
     private String buildAuthorizationUrl() {
@@ -76,15 +133,6 @@ public class SpotifyLoginActivity extends Activity {
                 "&scope=" + SCOPE;
     }
 
-    private void handleCallback(String callbackUrl) {
-        // Extract authorization code from callback URL and exchange it for access token
-        String code = getCodeFromCallbackUrl(callbackUrl);
-        if (code != null) {
-            exchangeCodeForToken(code);
-        } else {
-            Log.e(activity, "Error in handleCallback" + code);
-        }
-    }
 
     private String getCodeFromCallbackUrl(String callbackUrl) {
         // Extract authorization code from callback URL
@@ -92,24 +140,38 @@ public class SpotifyLoginActivity extends Activity {
         return null;
     }
 
-    private void exchangeCodeForToken(String code) {
-        // Exchange authorization code for access token
-        Executor executor = Executors.newSingleThreadExecutor();
-        FutureTask<String> futureTask = new FutureTask<>(() -> {
-            // Make HTTP request to Spotify token endpoint to exchange code for token
-            // You need to implement this part based on your networking library or method of choice
-            return "access_token_here"; // Replace with actual access token
+    private void exchangeCodeForToken(String code, String codeVerifier) {
+        TokenRequestBody requestBody = new TokenRequestBody(
+                CLIENT_ID,
+                REDIRECT_URI,
+                "authorization_code",
+                code,
+                codeVerifier
+        );
+
+        // Retrofit service call to exchange code for token
+        // Assuming 'service' is your Retrofit service interface
+        Call<TokenResponse> call = service.getAccessToken(requestBody);
+        call.enqueue(new Callback<TokenResponse>() {
+            @Override
+            public void onResponse(Call<TokenResponse> call, Response<TokenResponse> response) {
+                if (response.isSuccessful()) {
+                    TokenResponse tokenResponse = response.body();
+                    String accessToken = tokenResponse.getAccessToken();
+
+                    // Pass the access token to MainActivity
+                    startScrollingActivity(accessToken);
+                } else {
+                    // Handle error
+                    Log.e("SpotifyLoginActivity", "Token exchange failed with error code: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TokenResponse> call, Throwable t) {
+                Log.e("SpotifyLoginActivity", "Token exchange failed", t);
+            }
         });
-        executor.execute(futureTask);
-        try {
-            String accessToken = futureTask.get();
-            // Handle access token
-            // For example, you can save it to SharedPreferences and start the next activity
-            startScrollingActivity(accessToken);
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Handle error
-        }
     }
 
     private void startScrollingActivity(String accessToken) {

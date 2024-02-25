@@ -1,10 +1,15 @@
 package com.example.spotifytracker;
 
+import android.annotation.SuppressLint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -31,6 +36,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 public class ScrollingActivity extends AppCompatActivity {
 
     private static final String CLIENT_ID = BuildConfig.CLIENT_ID; // see here on api key variables https://guides.codepath.com/android/Storing-Secret-Keys-in-Android#secrets-in-resource-files
@@ -47,6 +58,13 @@ public class ScrollingActivity extends AppCompatActivity {
     private Map<String, String> mSongDictionary = new HashMap<>();
     private static ArrayList<String> mSongs = new ArrayList<String>();
 
+    private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
+    private static final String RESPONSE_TYPE = "code";
+    private static final String SCOPE = "user-read-private user-read-email"; // Add required scopes
+    private static final String BASE_URL = "https://api.spotify.com/";
+
+    private WebView webView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,10 +72,41 @@ public class ScrollingActivity extends AppCompatActivity {
         com.example.spotifytracker.databinding.ActivityScrollingBinding binding = ActivityScrollingBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        String accessToken = getIntent().getStringExtra("ACCESS_TOKEN");
         Toolbar toolbar = binding.toolbar;
         setSupportActionBar(toolbar);
         CollapsingToolbarLayout toolBarLayout = binding.toolbarLayout;
         toolBarLayout.setTitle(getTitle());
+
+        // Create Retrofit instance
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        // Create Retrofit service
+        SpotifyApiService service = retrofit.create(SpotifyApiService.class);
+
+        // Make API call to get playlist by its ID
+        Call<PlaylistResponse> playlistCall = service.getPlaylist("Bearer " + accessToken, "3cEYpjA9oz9GiPac4AsH4n");
+        playlistCall.enqueue(new Callback<PlaylistResponse>() {
+            @Override
+            public void onResponse(Call<PlaylistResponse> call, Response<PlaylistResponse> response) {
+                if (response.isSuccessful()) {
+                    PlaylistResponse playlistResponse = response.body();
+                    // Handle playlist data
+                } else {
+                    // Handle error
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PlaylistResponse> call, Throwable t) {
+                // Handle failure
+            }
+        });
+
+
 
         /* Find Tablelayout defined in activity_scrolling.xml */
         TableLayout tl = (TableLayout) findViewById(R.id.TableLayout);
