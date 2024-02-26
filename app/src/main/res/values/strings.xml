@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Spotify Tracker</string>
+    <string name="warning_need_token">You need to request an access token first</string>
+    <string name="code">Code: %1$s</string>
+    <string name="token">Access Token: %1$s</string>
     <string name="large_text">❤️ 30.01.2016 ❤️</string>
     <string name="temp">
         "Material is the metaphor.\n\n"

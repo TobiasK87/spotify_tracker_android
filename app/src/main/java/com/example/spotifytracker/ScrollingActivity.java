@@ -1,373 +1,172 @@
 package com.example.spotifytracker;
 
+/*
+ * Copyright (c) 2015-2018 Spotify AB
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import com.spotify.sdk.android.auth.AuthorizationClient;
+import com.spotify.sdk.android.auth.AuthorizationRequest;
+import com.spotify.sdk.android.auth.AuthorizationResponse;
 
-import com.example.spotifytracker.databinding.ActivityScrollingBinding;
-import com.google.android.material.appbar.CollapsingToolbarLayout;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-import com.spotify.android.appremote.api.ConnectionParams;
-import com.spotify.android.appremote.api.Connector;
-import com.spotify.android.appremote.api.SpotifyAppRemote;
-import com.spotify.protocol.client.Subscription;
-import com.spotify.protocol.types.PlayerState;
-import com.spotify.protocol.types.Track;
-import com.spotify.android.appremote.api.PlayerApi;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.util.Locale;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class ScrollingActivity extends AppCompatActivity {
 
-    private static final String CLIENT_ID = BuildConfig.CLIENT_ID; // see here on api key variables https://guides.codepath.com/android/Storing-Secret-Keys-in-Android#secrets-in-resource-files
+    public static final String CLIENT_ID = "089d841ccc194c10a77afad9e1c11d54";
+    public static final int AUTH_TOKEN_REQUEST_CODE = 0x10;
+    public static final int AUTH_CODE_REQUEST_CODE = 0x11;
 
-    /* in order to get SHA1 Key, run this in PowerShell:
-    keytool -list -v -keystore "C:\Users\Tobi\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android */
-    // private static final String REDIRECT_URI = "http://com.yourdomain.yourapp/callback";
-    private static final String REDIRECT_URI = "http://localhost:8080";
-    private final String a = "mainActivity";
-    private SpotifyAppRemote mSpotifyAppRemote;
-    private PlayerApi mPlayerApi;
-    private TextView mTextViewSongs;
-    private String mTimestamp = null;
-    private Map<String, String> mSongDictionary = new HashMap<>();
-    private static ArrayList<String> mSongs = new ArrayList<String>();
+    private final OkHttpClient mOkHttpClient = new OkHttpClient();
+    private String mAccessToken;
+    private String mAccessCode;
+    private Call mCall;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        com.example.spotifytracker.databinding.ActivityScrollingBinding binding = ActivityScrollingBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        Toolbar toolbar = binding.toolbar;
-        setSupportActionBar(toolbar);
-        CollapsingToolbarLayout toolBarLayout = binding.toolbarLayout;
-        toolBarLayout.setTitle(getTitle());
-
-        /* Find Tablelayout defined in activity_scrolling.xml */
-        TableLayout tl = (TableLayout) findViewById(R.id.TableLayout);
-        /* Create a new row to be added. */
-        TableRow tr = new TableRow(this);
-        tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        /* Create a Button to be the row-content. */
-
-        TextView t = new TextView(this);
-        t.setTextSize(16);
-        t.setText("Song");
-        //t.setTextColor(getResources().getColor(R.color.black));
-        t.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        t.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-
-        TextView t2 = new TextView(this);
-        t2.setTextSize(16);
-        t2.setText("Last played");
-        //t.setTextColor(getResources().getColor(R.color.black));
-        t2.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        t2.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-
-        Button b3 = new Button(this);
-        b3.setTextSize(16);
-        b3.setText("Dynamic Button 3");
-        b3.setTextColor(getResources().getColor(R.color.white));
-        b3.setBackgroundColor(getResources().getColor(R.color.purple_700));
-        b3.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        //b3.setWidth(0);
-        b3.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-        //b3.setTextSize(R.dimen.text_margin);
-
-        /* Add Button to row. */
-        tr.addView(t);
-        tr.addView(t2);
-        tr.addView(b3);
-
-
-
-        /* this was the button which should create the snackbar
-        Button button = (Button) findViewById(R.id.button);
-        mTextViewSongs = (TextView) findViewById(R.id.songs) ;
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-
-                if (mSongs.size() > 0) {
-                    Log.d("mainActivity", "Song: " + mSongs.get(0));
-                    String track_str = mSongs.get(mSongs.size() - 1);
-                    Snackbar.make(v, "Currently playing: " + track_str, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
-                Log.d("mainActivity", Integer.toString(mSongs.size()));
-                if (mSongs.size() > 0){
-                    String track_str = "";
-                    for(int i = mSongs.size()-1; i>=0; i--) {
-                        track_str = track_str + mSongs.get(i) + "\n";
-
-                    }
-                    mTextViewSongs.setText(track_str);
-                    // Snackbar.make(v, "Songs played (reversed order): " + track_str, Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                }
-            }
-        });
-        */
-
-
-        FloatingActionButton fab = binding.fab;
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();*/
-
-                /*
-                CallResult<PlayerState> playerStateCall = mSpotifyAppRemote.getPlayerApi().getPlayerState();
-                Result<PlayerState> playerStateResult = playerStateCall.await(10, TimeUnit.SECONDS);
-                if (playerStateResult.isSuccessful()) {
-                    PlayerState playerState = playerStateResult.getData();
-                    Track track = playerState.track;
-                    String track_str = track.name + " by " + track.artist.name;
-                    Snackbar.make(view, track_str, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                } else {
-                    Throwable error = playerStateResult.getError();
-                    Log.e("mainActivity", "Snackbar error: " + error.toString());
-                }
-                */
-
-                mSpotifyAppRemote.getPlayerApi().getPlayerState().setResultCallback(playerState -> {
-                            final Track track = playerState.track;
-                            if (track != null) {
-                                final String track_str = track.name + " by " + track.artist.name;
-                                mSongs.add(track_str);
-                            }
-                        });
-
-                mPlayerApi = mSpotifyAppRemote.getPlayerApi();
-                // mPlayerApi.pause();
-                String s = mSpotifyAppRemote.getPlayerApi().getPlayerState().toString();
-                Log.d("mainActinvity", "s is " + s);
-
-                /*
-                Subscription subscription = mPlayerApi.subscribeToPlayerState();
-                subscription.setEventCallback(new Subscription.EventCallback<PlayerState>() {
-                    public void onEvent(PlayerState playerState) {
-                        if(playerState.track.uri.equals(uri) && !playerState.isPaused) {
-                            log("Track is ready, seeking into song");
-                            subscription.cancel();
-                            appRemote.getPlayerApi().seekTo(duration / 3);
-                        }
-                    }
-                });
-                */
-
-
-                try {
-                    TimeUnit.SECONDS.sleep(3);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                Log.e("mainActivity", Integer.toString(mSongs.size()));
-            }
-        });
+        setContentView(R.layout.activity_main);
+        getSupportActionBar().setTitle(String.format(
+                Locale.US, "Spotify Auth Sample %s", com.spotify.sdk.android.auth.BuildConfig.LIB_VERSION_NAME));
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_scrolling, menu);
-        return true;
+    protected void onDestroy() {
+        cancelCall();
+        super.onDestroy();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    public void onGetUserProfileClicked(View view) {
+        if (mAccessToken == null) {
+            final Snackbar snackbar = Snackbar.make(findViewById(R.id.activity_main), R.string.warning_need_token, Snackbar.LENGTH_SHORT);
+            snackbar.getView().setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent));
+            snackbar.show();
+            return;
         }
-        return super.onOptionsItemSelected(item);
-    }
 
-    // copied from https://developer.spotify.com/documentation/android/tutorials/getting-started
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Set the connection parameters
+        final Request request = new Request.Builder()
+                .url("https://api.spotify.com/v1/me")
+                .addHeader("Authorization","Bearer " + mAccessToken)
+                .build();
 
-        ConnectionParams connectionParams =
-                new ConnectionParams.Builder(CLIENT_ID)
-                        .setRedirectUri(REDIRECT_URI)
-                        .showAuthView(true)
-                        .build();
+        cancelCall();
+        mCall = mOkHttpClient.newCall(request);
 
+        mCall.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                setResponse("Failed to fetch data: " + e);
+            }
 
-        SpotifyAppRemote.connect(this, connectionParams,
-                new Connector.ConnectionListener() {
-
-                    @Override
-                    public void onConnected(SpotifyAppRemote spotifyAppRemote) {
-                        mSpotifyAppRemote = spotifyAppRemote;
-                        Log.d("MainActivity", "Connected! Yay!");
-
-                        // Now you can start interacting with App Remote
-                        connected();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        Log.e("MainActivity", throwable.getMessage(), throwable);
-
-                        // Something went wrong when attempting to connect! Handle errors here
-                    }
-                });
-    }
-
-    private void connected() {
-        // Play a playlist
-        //mSpotifyAppRemote.getPlayerApi().play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
-        // mSpotifyAppRemote.getPlayerApi().play("spotify:playlist:5VWSaK5iRxg6ckUea97Cgy");
-        mSpotifyAppRemote.getPlayerApi().play("spotify:playlist:3FoxypbhZB8j5XivI8wQqU");
-
-        mSpotifyAppRemote.getPlayerApi().subscribeToPlayerState().setEventCallback(playerState -> {
-            String uri = playerState.track.uri;
-            /* This is a super dirty implementation to jump to the next song which does not work well at all
-            if(uri != "6dJ2mSRaKE9ctYw9qWNGWQ"){
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
                 try {
-                    TimeUnit.SECONDS.sleep((long) 1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    final JSONObject jsonObject = new JSONObject(response.body().string());
+                    setResponse(jsonObject.toString(3));
+                } catch (JSONException e) {
+                    setResponse("Failed to parse data: " + e);
                 }
-                mSpotifyAppRemote.getPlayerApi().skipNext();
-                Log.d(a, "Skipping track: " + playerState.track.name + " with uri " + uri);
             }
-            */
         });
-        // would work mSpotifyAppRemote.getPlayerApi().skipToIndex("spotify:playlist:3FoxypbhZB8j5XivI8wQqU", 2);
+    }
 
-        // Subscribe to PlayerState
-        mSpotifyAppRemote.getPlayerApi()
-                .subscribeToPlayerState() // maybe use getPlayerState instead? https://spotify.github.io/android-sdk/app-remote-lib/docs/com/spotify/android/appremote/api/PlayerApi.html#getPlayerState--
-                .setEventCallback(playerState -> {
-                    final Track track = playerState.track;
-                    final long playbackPosition = playerState.playbackPosition;
-                    if (track != null) {
-                        String uri = track.uri;
-                        Log.d("MainActivity", "in onStop:" + track.name + " by " + track.artist.name + " with uri " + uri);
-                        String track_str = track.artist.name + " - " + track.name;
+    public void onRequestCodeClicked(View view) {
+        final AuthorizationRequest request = getAuthenticationRequest(AuthorizationResponse.Type.CODE);
+        AuthorizationClient.openLoginActivity(this, AUTH_CODE_REQUEST_CODE, request);
+    }
 
-                        if(mSongDictionary.get(uri) == null) {
-                            addRow(track_str, "last played", uri);
-                        }
+    public void onRequestTokenClicked(View view) {
+        final AuthorizationRequest request = getAuthenticationRequest(AuthorizationResponse.Type.TOKEN);
+        AuthorizationClient.openLoginActivity(this, AUTH_TOKEN_REQUEST_CODE, request);
+    }
 
-                        // Log.d(a, Boolean.toString(uri==null));
-                        // Log.d(a, "Map is empty: "  + Boolean.toString(mSongDictionary.values().isEmpty()));
-
-
-                        if(mSongDictionary.get(uri) == null);{
-                            if (mTimestamp == null) {
-                                mTimestamp = String.valueOf(System.currentTimeMillis());
-                            } else {
-                                mTimestamp = String.valueOf(System.currentTimeMillis() - Long.parseLong(mTimestamp));
-                            }
-                            // track_str = track_str + "stopped after: "+ mTimestamp;
-                            mSongDictionary.put(uri, track_str);
-                        }
-                        /*
-                        String all_tracks = "";
-                        //Log.d("mainactivity", mSongDictionary.values().toString());
-                        for(String tracks: mSongDictionary.values()){
-
-                            all_tracks = all_tracks + tracks + "\n";
-                        }
-                        // String track_str = mTextViewSongs.getText() + "\n" +  track.name + " by " + track.artist.name;
-                        //mTextViewSongs.setText(track_str);
-                        mTextViewSongs.setText(all_tracks);
-                        */
-                    }
-                });
-
-        mSpotifyAppRemote.getPlayerApi()
-                .subscribeToPlayerContext().
-                setEventCallback(playerContext -> {
-                    String playlistUri = playerContext.uri;
-                    String playlistTitle = playerContext.title;
-                    String playlistSubTitle = playerContext.subtitle;
-
-                    Log.d(a, "playlistinfo: " + playlistTitle + " " + playlistSubTitle + " " + playlistUri);
-                });
-
+    private AuthorizationRequest getAuthenticationRequest(AuthorizationResponse.Type type) {
+        return new AuthorizationRequest.Builder(CLIENT_ID, type, getRedirectUri().toString())
+                .setShowDialog(false)
+                .setScopes(new String[]{"user-read-email"})
+                .setCampaign("your-campaign-token")
+                .build();
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        final AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, data);
+        if (response.getError() != null && !response.getError().isEmpty()) {
+            setResponse(response.getError());
+        }
+        if (requestCode == AUTH_TOKEN_REQUEST_CODE) {
+            mAccessToken = response.getAccessToken();
+            updateTokenView();
+        } else if (requestCode == AUTH_CODE_REQUEST_CODE) {
+            mAccessCode = response.getCode();
+            updateCodeView();
+        }
     }
 
-    private void addRow(String song, String last_played, String uri){
-
-        /* Find Tablelayout defined in activity_scrolling.xml */
-        TableLayout tl = (TableLayout) findViewById(R.id.TableLayout);
-        /* Create a new row to be added. */
-        TableRow tr = new TableRow(this);
-        tr.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        /* Create a Button to be the row-content. */
-
-        TextView songTextView = new TextView(this);
-        songTextView.setTextSize(16);
-        songTextView.setText(song);
-        //t.setTextColor(getResources().getColor(R.color.black));
-        songTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        songTextView.setWidth(0);
-        songTextView.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-
-        TextView lastPlayedTextView = new TextView(this);
-        lastPlayedTextView.setTextSize(16);
-        lastPlayedTextView.setText(last_played);
-        //t.setTextColor(getResources().getColor(R.color.black));
-        lastPlayedTextView.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        lastPlayedTextView.setWidth(0);
-        lastPlayedTextView.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-
-        Button playButton = new Button(this);
-        playButton.setTextSize(16);
-        playButton.setText("play");
-        playButton.setTextColor(getResources().getColor(R.color.white));
-        playButton.setBackgroundColor(getResources().getColor(R.color.purple_700));
-        playButton.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-        playButton.setWidth(0);
-        playButton.setTextAlignment(Button.TEXT_ALIGNMENT_CENTER);
-        playButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                mSpotifyAppRemote.getPlayerApi().play(uri);
-            }
-
+    private void setResponse(final String text) {
+        runOnUiThread(() -> {
+            final TextView responseView = findViewById(R.id.response_text_view);
+            responseView.setText(text);
         });
-        //b3.setTextSize(R.dimen.text_margin);
+    }
 
-        /* Add Button to row. */
-        tr.addView(songTextView);
-        tr.addView(lastPlayedTextView);
-        tr.addView(playButton);
-        /* Add row to TableLayout. */
-        //tr.setBackgroundResource(R.drawable.sf_gradient_03);
-        tl.addView(tr, new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+    private void updateTokenView() {
+        final TextView tokenView = findViewById(R.id.token_text_view);
+        tokenView.setText(getString(R.string.token, mAccessToken));
+    }
 
+    private void updateCodeView() {
+        final TextView codeView = findViewById(R.id.code_text_view);
+        codeView.setText(getString(R.string.code, mAccessCode));
+    }
+
+    private void cancelCall() {
+        if (mCall != null) {
+            mCall.cancel();
+        }
+    }
+
+    private Uri getRedirectUri() {
+        return new Uri.Builder()
+                .scheme(getString(R.string.com_spotify_sdk_redirect_scheme))
+                .authority(getString(R.string.com_spotify_sdk_redirect_host))
+                .build();
     }
 }
